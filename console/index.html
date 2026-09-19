@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Nebula AI Stack · 控制台</title>
+<style>
+  :root {
+    --bg: #0b0f14;
+    --panel: #121821;
+    --panel-2: #161d28;
+    --line: #223040;
+    --text: #e6edf3;
+    --dim: #8b9bb0;
+    --accent: #2dd4bf;
+    --accent-dim: #0f766e;
+    --warn: #f59e0b;
+    --err: #f87171;
+    --ok: #34d399;
+    --radius: 10px;
+    --mono: ui-monospace, SFMono-Regular, "Cascadia Code", Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 14px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+  }
+  header {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    padding: 14px 20px; border-bottom: 1px solid var(--line); background: var(--panel);
+  }
+  .brand { display: flex; align-items: center; gap: 9px; font-weight: 600; letter-spacing: .3px; }
+  .brand svg { color: var(--accent); }
+  .sub { color: var(--dim); font-size: 12px; }
+  .grow { flex: 1 1 auto; min-width: 0; }
+  .status { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--dim); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); }
+  .dot.ok { background: var(--ok); } .dot.warn { background: var(--warn); } .dot.err { background: var(--err); }
+  main { max-width: 1180px; margin: 0 auto; padding: 18px 20px 60px; }
+  nav.tabs { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+  nav.tabs button {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: var(--panel); color: var(--dim); border: 1px solid var(--line);
+    padding: 8px 14px; border-radius: var(--radius); cursor: pointer; font-size: 13px;
+  }
+  nav.tabs button[aria-selected="true"] { color: var(--text); border-color: var(--accent-dim); background: var(--panel-2); }
+  section.pane { display: none; } section.pane.active { display: block; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; margin-bottom: 14px; }
+  .card h2 { margin: 0 0 10px; font-size: 13px; font-weight: 600; color: var(--dim); letter-spacing: .4px; text-transform: uppercase; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  input[type=text], textarea, select {
+    background: var(--panel-2); color: var(--text); border: 1px solid var(--line);
+    border-radius: 8px; padding: 9px 11px; font: inherit; min-width: 0;
+  }
+  textarea { width: 100%; min-height: 92px; resize: vertical; font-family: var(--mono); font-size: 12.5px; }
+  input[type=text] { flex: 1 1 320px; }
+  button.primary {
+    display: inline-flex; align-items: center; gap: 7px; background: var(--accent-dim); color: #ecfdf5;
+    border: 0; border-radius: 8px; padding: 9px 16px; cursor: pointer; font: inherit;
+  }
+  button.primary:hover { filter: brightness(1.15); }
+  button.ghost { background: transparent; color: var(--dim); border: 1px solid var(--line); border-radius: 8px; padding: 8px 13px; cursor: pointer; font: inherit; }
+  .kpi { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+  .kpi div { background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+  .kpi span { display: block; color: var(--dim); font-size: 11px; }
+  .kpi strong { font-family: var(--mono); font-size: 14px; font-weight: 600; }
+  pre { background: #0d141c; border: 1px solid var(--line); border-radius: 8px; padding: 12px; overflow: auto; font-family: var(--mono); font-size: 12.5px; max-height: 340px; }
+  .ans { white-space: pre-wrap; }
+  ol.cites { list-style: none; padding: 0; margin: 10px 0 0; }
+  ol.cites li { border-left: 2px solid var(--accent-dim); padding: 6px 10px; margin-bottom: 6px; background: var(--panel-2); border-radius: 0 8px 8px 0; font-size: 12.5px; }
+  ol.cites b { color: var(--accent); font-family: var(--mono); }
+  .badge { display: inline-block; font-size: 11px; border: 1px solid var(--line); border-radius: 999px; padding: 2px 9px; color: var(--dim); }
+  .badge.ok { color: var(--ok); border-color: #14532d; }
+  .badge.warn { color: var(--warn); border-color: #78350f; }
+  table.steps { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  table.steps th, table.steps td { text-align: left; padding: 7px 9px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.steps th { color: var(--dim); font-weight: 500; }
+  .muted { color: var(--dim); }
+  .mono { font-family: var(--mono); }
+  footer { color: var(--dim); font-size: 12px; padding: 0 20px 30px; max-width: 1180px; margin: 0 auto; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-orbit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+    <circle cx="12" cy="12" r="3"/><ellipse cx="12" cy="12" rx="9" ry="4"/><ellipse cx="12" cy="12" rx="4" ry="9"/>
+  </symbol>
+  <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+    <circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/>
+  </symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+    <path d="M21 12a8 8 0 0 1-8 8H7l-4 3v-7a8 8 0 0 1 8-8h2a8 8 0 0 1 8 4z"/>
+  </symbol>
+  <symbol id="i-db" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+    <ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/>
+  </symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round">
+    <path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z"/>
+  </symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+    <path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 5v6h-6"/>
+  </symbol>
+</svg>
+
+<header>
+  <div class="brand">
+    <svg width="20" height="20"><use href="#i-orbit"/></svg>
+    <span>Nebula AI Stack</span>
+    <span class="sub">星穹 · 端到端 AI 系统控制台</span>
+  </div>
+  <div class="grow"></div>
+  <div class="status">
+    <input type="text" id="api" value="http://127.0.0.1:8765" style="flex:0 1 220px;padding:6px 10px;font-size:12px" />
+    <button class="ghost" id="btnHealth"><svg width="14" height="14"><use href="#i-refresh"/></svg> 连接</button>
+    <span id="healthDot" class="dot"></span><span id="healthText">未连接</span>
+  </div>
+</header>
+
+<main>
+  <div class="card">
+    <h2>运行状态</h2>
+    <div class="kpi" id="kpis"><span class="muted">点击右上角“连接”读取网关状态</span></div>
+  </div>
+
+  <nav class="tabs" role="tablist">
+    <button role="tab" aria-selected="true" data-pane="p-ask"><svg width="15" height="15"><use href="#i-chat"/></svg> 问答</button>
+    <button role="tab" aria-selected="false" data-pane="p-search"><svg width="15" height="15"><use href="#i-search"/></svg> 检索</button>
+    <button role="tab" aria-selected="false" data-pane="p-ingest"><svg width="15" height="15"><use href="#i-db"/></svg> 入库</button>
+    <button role="tab" aria-selected="false" data-pane="p-agent"><svg width="15" height="15"><use href="#i-bolt"/></svg> Agent</button>
+  </nav>
+
+  <section class="pane active" id="p-ask">
+    <div class="card">
+      <h2>检索增强问答（带引用）</h2>
+      <div class="row">
+        <input type="text" id="askQ" placeholder="例如：CPU 上线程数应该设多少？" />
+        <label class="muted"><input type="checkbox" id="askRerank" checked /> 启用重排</label>
+        <button class="primary" id="btnAsk">提问</button>
+      </div>
+      <div id="askOut" style="margin-top:14px"></div>
+    </div>
+  </section>
+
+  <section class="pane" id="p-search">
+    <div class="card">
+      <h2>混合检索链路（BM25 + 稠密 → RRF → 重排二次融合）</h2>
+      <div class="row">
+        <input type="text" id="sQ" placeholder="输入查询" />
+        <input type="text" id="sK" value="5" style="flex:0 0 70px" />
+        <label class="muted"><input type="checkbox" id="sRerank" checked /> 重排</label>
+        <button class="primary" id="btnSearch">检索</button>
+      </div>
+      <div id="sOut" style="margin-top:14px"></div>
+    </div>
+  </section>
+
+  <section class="pane" id="p-ingest">
+    <div class="card">
+      <h2>文档入库</h2>
+      <div class="row">
+        <input type="text" id="iSource" value="manual/console.md" style="flex:0 1 260px" />
+        <label class="muted"><input type="checkbox" id="iReset" /> 先清空索引</label>
+        <button class="primary" id="btnIngest">入库</button>
+      </div>
+      <textarea id="iText" placeholder="粘贴文档内容（Markdown/纯文本均可）" style="margin-top:10px"></textarea>
+      <div id="iOut" style="margin-top:10px"></div>
+    </div>
+  </section>
+
+  <section class="pane" id="p-agent">
+    <div class="card">
+      <h2>工具调用 Agent（ReAct）</h2>
+      <div class="row">
+        <input type="text" id="aGoal" placeholder="例如：帮我算 sqrt(2)*3，并说明知识库里线程数怎么设" />
+        <input type="text" id="aSteps" value="5" style="flex:0 0 70px" />
+        <button class="primary" id="btnAgent">执行</button>
+      </div>
+      <div id="aOut" style="margin-top:14px"></div>
+    </div>
+  </section>
+</main>
+
+<footer>Nebula AI Stack · 作者 晨星 · 单文件控制台（内联 CSS/JS，零外部依赖）</footer>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const api = () => $("#api").value.replace(/\/+$/, "");
+
+document.querySelectorAll("nav.tabs button").forEach((b) => {
+  b.addEventListener("click", () => {
+    document.querySelectorAll("nav.tabs button").forEach((x) => x.setAttribute("aria-selected", "false"));
+    document.querySelectorAll("section.pane").forEach((p) => p.classList.remove("active"));
+    b.setAttribute("aria-selected", "true");
+    document.getElementById(b.dataset.pane).classList.add("active");
+  });
+});
+
+const esc = (s) => String(s ?? "").replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+const pretty = (o) => esc(JSON.stringify(o, null, 2));
+
+async function call(path, opts) {
+  const res = await fetch(api() + path, Object.assign({ headers: { "Content-Type": "application/json" } }, opts));
+  const text = await res.text();
+  let body; try { body = JSON.parse(text); } catch { body = { raw: text }; }
+  if (!res.ok) throw new Error(res.status + " " + (body.detail || text));
+  return body;
+}
+
+async function connect() {
+  const dot = $("#healthDot"), txt = $("#healthText");
+  dot.className = "dot"; txt.textContent = "连接中…";
+  try {
+    const h = await call("/healthz");
+    const m = h.modules;
+    dot.className = "dot ok"; txt.textContent = "已连接 v" + h.version;
+    const cell = (k, v, cls = "") => `<div><span>${k}</span><strong class="${cls}">${esc(v)}</strong></div>`;
+    $("#kpis").innerHTML = [
+      cell("LLM", m.llm_model, m.llm === "ollama" ? "" : "mono"),
+      cell("推理线程", m.llm_threads ?? "-"),
+      cell("嵌入模型", m.embedder),
+      cell("重排器", m.reranker + (m.reranker_enabled ? "" : "（未启用）")),
+      cell("向量库", m.store + (m.store_degraded ? "（降级）" : "")),
+      cell("已入库分块", m.chunks),
+      cell("工具", (m.tools || []).join(", ")),
+      cell("模式", m.offline ? "离线（无模型）" : "在线"),
+    ].join("");
+  } catch (e) {
+    dot.className = "dot err"; txt.textContent = "连接失败";
+    $("#kpis").innerHTML = `<span class="muted">${esc(e.message)}　请先执行：uv run nebula serve</span>`;
+  }
+}
+
+function citations(list) {
+  if (!list || !list.length) return "";
+  return "<ol class='cites'>" + list.map((c) =>
+    `<li><b>[${c.index}]</b> ${esc(c.source)} <span class="badge">RRF ${c.score}</span> ` +
+    `<span class="badge">稠密#${c.dense_rank ?? "-"}</span> <span class="badge">稀疏#${c.sparse_rank ?? "-"}</span>` +
+    `${c.rerank_score === null || c.rerank_score === undefined ? "" : ` <span class="badge">重排 ${c.rerank_score}</span>`}` +
+    `<div class="muted">${esc(c.snippet)}</div></li>`).join("") + "</ol>";
+}
+
+$("#btnHealth").onclick = connect;
+
+$("#btnAsk").onclick = async () => {
+  const out = $("#askOut"); out.innerHTML = "<span class='muted'>生成中…（本地 CPU 推理，请稍候）</span>";
+  try {
+    const b = await call("/v1/rag/answer", { method: "POST", body: JSON.stringify({ query: $("#askQ").value, use_rerank: $("#askRerank").checked }) });
+    const cls = b.mode === "rag" ? "ok" : "warn";
+    out.innerHTML =
+      `<div class="row" style="margin-bottom:8px"><span class="badge ${cls}">mode：${esc(b.mode)}</span>` +
+      `<span class="badge">${esc(b.model || "-")}</span><span class="badge">${b.tok_s || 0} tok/s</span></div>` +
+      `<div class="ans">${esc(b.answer)}</div>${citations(b.citations)}` +
+      `<details style="margin-top:10px"><summary class="muted">检索链路 trace</summary><pre>${pretty(b.trace)}</pre></details>`;
+  } catch (e) { out.innerHTML = `<span class="badge warn">失败</span> ${esc(e.message)}`; }
+};
+
+$("#btnSearch").onclick = async () => {
+  const out = $("#sOut"); out.innerHTML = "<span class='muted'>检索中…</span>";
+  try {
+    const b = await call("/v1/rag/search", { method: "POST", body: JSON.stringify({ query: $("#sQ").value, top_k: parseInt($("#sK").value || "5", 10), use_rerank: $("#sRerank").checked }) });
+    out.innerHTML = `<div class="row"><span class="badge ${b.trace.rerank_used ? "ok" : ""}">重排：${b.trace.rerank_used ? "已启用" : "未启用"}</span></div>` +
+      citations(b.hits.map((h, i) => ({ index: i + 1, source: h.source, score: h.score.toFixed(4), dense_rank: h.dense_rank, sparse_rank: h.sparse_rank, rerank_score: h.rerank_score === null ? null : h.rerank_score.toFixed(3), snippet: h.text }))) +
+      `<details style="margin-top:10px"><summary class="muted">融合 trace</summary><pre>${pretty(b.trace)}</pre></details>`;
+  } catch (e) { out.innerHTML = `<span class="badge warn">失败</span> ${esc(e.message)}`; }
+};
+
+$("#btnIngest").onclick = async () => {
+  const out = $("#iOut"); out.innerHTML = "<span class='muted'>入库中…</span>";
+  try {
+    const b = await call("/v1/rag/ingest", { method: "POST", body: JSON.stringify({ docs: [{ text: $("#iText").value, source: $("#iSource").value }], reset: $("#iReset").checked }) });
+    out.innerHTML = `<span class="badge ok">完成</span> 新增 ${b.chunks} 块，库中合计 ${b.documents} 块`;
+    connect();
+  } catch (e) { out.innerHTML = `<span class="badge warn">失败</span> ${esc(e.message)}`; }
+};
+
+$("#btnAgent").onclick = async () => {
+  const out = $("#aOut"); out.innerHTML = "<span class='muted'>执行中…</span>";
+  try {
+    const b = await call("/v1/agent/run", { method: "POST", body: JSON.stringify({ goal: $("#aGoal").value, max_steps: parseInt($("#aSteps").value || "5", 10) }) });
+    const rows = (b.steps || []).map((s) =>
+      `<tr><td class="mono">${s.step}</td><td>${esc(s.action)}</td><td class="mono">${esc(s.tool || "-")}</td><td>${esc(s.observation || s.thought || "").slice(0, 220)}</td></tr>`).join("");
+    out.innerHTML = `<div class="row"><span class="badge ${b.status === "ok" ? "ok" : "warn"}">状态：${esc(b.status)}</span><span class="badge">迭代 ${b.iterations}</span><span class="badge">工具：${esc((b.tools || []).join(", "))}</span></div>` +
+      `<div class="ans" style="margin:10px 0">${esc(b.answer)}</div>` +
+      `<table class="steps"><thead><tr><th>步骤</th><th>动作</th><th>工具</th><th>观察</th></tr></thead><tbody>${rows}</tbody></table>`;
+  } catch (e) { out.innerHTML = `<span class="badge warn">失败</span> ${esc(e.message)}`; }
+};
+
+$("#askQ").addEventListener("keydown", (e) => { if (e.key === "Enter") $("#btnAsk").click(); });
+$("#sQ").addEventListener("keydown", (e) => { if (e.key === "Enter") $("#btnSearch").click(); });
+$("#aGoal").addEventListener("keydown", (e) => { if (e.key === "Enter") $("#btnAgent").click(); });
+connect();
+</script>
+</body>
+</html>

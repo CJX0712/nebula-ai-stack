@@ -1,0 +1,29 @@
+name: verify
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  # 干净环境可复现的机器判据：不装 Ollama、不下载模型，全部走离线模式。
+  offline-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: 固定 Python 版本
+        run: uv python install 3.12
+      - name: 按锁文件安装依赖（版本锁定）
+        run: uv sync --extra dev --frozen
+      - name: 单元不变量
+        run: uv run pytest -q tests
+      - name: 端到端冒烟（离线契约 + 自动跳过在线部分）
+        run: uv run python -m nebula.smoke
+      - name: 检索评测（离线可复现基线）
+        run: uv run nebula eval --offline
+      - name: 一键自检
+        run: uv run python scripts/verify.py --skip-eval

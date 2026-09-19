@@ -1,0 +1,40 @@
+{
+  "mode": "online",
+  "embedder": "OllamaEmbedder",
+  "reranker": "OnnxReranker",
+  "questions": 24,
+  "corpus": 16,
+  "results": {
+    "纯 RRF（不用重排）": {
+      "top1": 23,
+      "top3": 24,
+      "n": 24
+    },
+    "重排直接接管（错误写法）": {
+      "top1": 22,
+      "top3": 24,
+      "n": 24
+    },
+    "二次融合 w=0.25": {
+      "top1": 23,
+      "top3": 24,
+      "n": 24
+    },
+    "二次融合 w=0.50": {
+      "top1": 23,
+      "top3": 24,
+      "n": 24
+    },
+    "二次融合 w=0.75": {
+      "top1": 23,
+      "top3": 24,
+      "n": 24
+    },
+    "二次融合 w=1.00（等权）": {
+      "top1": 23,
+      "top3": 24,
+      "n": 24
+    }
+  },
+  "rerank_ms_per_query": 981.2
+}

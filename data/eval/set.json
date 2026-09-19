@@ -1,0 +1,80 @@
+{
+  "name": "nebula-goldset-v1",
+  "description": "中文黄金评测集：12 篇互不重叠的技术文档 + 20 条查询，用于钉住检索链路质量",
+  "corpus": [
+    {
+      "source": "docs/threads.md",
+      "text": "在 CPU 上运行量化小模型时，推理瓶颈是内存带宽而不是算力。实测八核十六线程机器，四线程可达三十二点五 tok/s，而十六线程只有八点二 tok/s。因此线程数应当锁在二到四之间，绝不能用核数减一。预填阶段虽然八线程最快，但端到端耗时由解码主导，必须按解码调优。"
+    },
+    {
+      "source": "docs/rerank.md",
+      "text": "交叉编码器重排不应直接接管最终排序。若把重排顺序当作最终顺序，一个在查询语言上力不从心的重排器会无人制衡地压掉正确答案。正确做法是把重排作为第三路信号，以零点五权重与一阶段 RRF 二次融合。权重扫描显示曲线并不单调，推到一等权反而退化。"
+    },
+    {
+      "source": "docs/quantize.md",
+      "text": "GGUF 是 llama.cpp 使用的量化模型格式，Q4_K_M 在四比特档位里质量与体积最均衡。四 B 参数的 Q4_K_M 文件约二点五 GB，八 B 约四点九 GB。量化越激进体积越小，但长尾知识损失越明显。"
+    },
+    {
+      "source": "docs/windows-port.md",
+      "text": "Windows 上八千到八一二三端口常被 WinNAT 与 Hyper-V 保留，绑定会失败并抛出 WinError 10013，这通常不是程序缺陷。默认服务端口应改为八七六五，并实现绑不上就自动回退的兜底逻辑。"
+    },
+    {
+      "source": "docs/ollama-think.md",
+      "text": "给 Qwen3 这类模型传 think 等于 false 并不能让它少思考，只会把思维链从 thinking 字段倒进 content 正文，一个 token 都不会省。正确做法是根本不发这个字段，让推理自然走 thinking 通道，前端折叠展示。"
+    },
+    {
+      "source": "docs/context.md",
+      "text": "上下文窗口由 num_ctx 控制，超出部分会被静默截断。检索增强生成里若把过多分块塞进提示词，最前面的系统指令反而可能被挤掉。建议按预算裁剪分块数量，而不是无限加大窗口。"
+    },
+    {
+      "source": "docs/chunking.md",
+      "text": "分块大小与重叠决定召回上限。块太大则语义稀释，块太小则上下文残缺。中文技术文档通常四百字左右一块、六十到八十重叠比较稳妥，并且要按段落优先切分。"
+    },
+    {
+      "source": "docs/bm25.md",
+      "text": "BM25 是稀疏检索的经典算法，依赖逆文档频率与词频饱和。中文必须先分词，否则查询与文档无法对齐。跨语言场景下中文查询对英文语料打分会全为零，这是预期行为，靠稠密检索兜底。"
+    },
+    {
+      "source": "docs/vector-db.md",
+      "text": "向量库负责持久化与近邻检索，余弦距离是文本嵌入最常用的度量。Qdrant 的本地模式无需服务端即可落盘，适合单机开发。注意点标识必须是合法 UUID 字符串或整数。"
+    },
+    {
+      "source": "docs/eval.md",
+      "text": "检索评测需要固定黄金集与口径，常用指标是 top-1 命中率、top-3 命中率与 MRR 平均倒数排名。top-3 恒高而 top-1 偏低，说明问题在排序而非召回。"
+    },
+    {
+      "source": "docs/security.md",
+      "text": "工具调用必须做安全边界。计算器不能用 eval 直接执行，而应基于抽象语法树做白名单求值。文件读取要校验路径不能越出允许的根目录，否则会形成任意文件读取漏洞。"
+    },
+    {
+      "source": "docs/deploy.md",
+      "text": "可复现要求版本锁定。用 uv 的锁文件记录全部传递依赖，另导出 requirements 文本清单，配合引导脚本完成一次安装。干净环境一键复现的判据是自检脚本全绿。"
+    }
+  ],
+  "queries": [
+    { "query": "CPU 推理线程数应该设成多少", "expect_source": "docs/threads.md" },
+    { "query": "为什么十六线程比四线程慢", "expect_source": "docs/threads.md" },
+    { "query": "重排权重为什么不能设成一", "expect_source": "docs/rerank.md" },
+    { "query": "交叉编码器重排应该怎么融合", "expect_source": "docs/rerank.md" },
+    { "query": "Q4_K_M 量化模型体积多大", "expect_source": "docs/quantize.md" },
+    { "query": "GGUF 是什么格式", "expect_source": "docs/quantize.md" },
+    { "query": "Windows 端口绑定失败报 WinError 10013 怎么办", "expect_source": "docs/windows-port.md" },
+    { "query": "默认服务端口为什么改成 8765", "expect_source": "docs/windows-port.md" },
+    { "query": "think 字段能不能省 token", "expect_source": "docs/ollama-think.md" },
+    { "query": "思维链跑到正文里了怎么回事", "expect_source": "docs/ollama-think.md" },
+    { "query": "上下文窗口超了会怎样", "expect_source": "docs/context.md" },
+    { "query": "num_ctx 怎么设置", "expect_source": "docs/context.md" },
+    { "query": "中文文档分块多大合适", "expect_source": "docs/chunking.md" },
+    { "query": "分块重叠应该设多少", "expect_source": "docs/chunking.md" },
+    { "query": "BM25 中文需要先分词吗", "expect_source": "docs/bm25.md" },
+    { "query": "逆文档频率是什么作用", "expect_source": "docs/bm25.md" },
+    { "query": "Qdrant 本地模式需要服务端吗", "expect_source": "docs/vector-db.md" },
+    { "query": "余弦距离用在什么场景", "expect_source": "docs/vector-db.md" },
+    { "query": "检索评测用哪些指标", "expect_source": "docs/eval.md" },
+    { "query": "工具调用的路径越界怎么防", "expect_source": "docs/security.md" },
+    { "query": "计算器为什么不能用 eval", "expect_source": "docs/security.md" },
+    { "query": "干净环境怎么一键复现", "expect_source": "docs/deploy.md" },
+    { "query": "版本锁定用什么锁文件", "expect_source": "docs/deploy.md" },
+    { "query": "top-1 低但 top-3 高说明什么", "expect_source": "docs/eval.md" }
+  ]
+}
