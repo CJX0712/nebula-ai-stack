@@ -153,14 +153,73 @@ score = [0.9628, 0.0002, 0.0334]   argmax=0（正确）
 
 ---
 
-## 7. 一键复现判据
+## 7. 干净环境可复现（两份独立证据）
+
+### 7.1 本机一键自检
 
 ```powershell
-uv run python scripts/verify.py
+uv run python scripts/verify.py          # 含在线链路（约 13 分钟，CPU 推理）
+uv run python scripts/verify.py --fast   # 仅离线路径（约 5 秒）
 ```
 
-输出为逐项 PASS/FAIL 汇总表，只有当「依赖导入 / 单元不变量 / 端到端冒烟 / 评测基线」
-四项全部通过时结论才是"干净环境验证全绿"。
+```
+=== 1/4 依赖导入 ===      [PASS] 模块可导入（版本锁定生效）  all imports ok
+=== 2/4 单元不变量 ===    [PASS] pytest 全绿                passed=60 failed=0 errors=0 skipped=0 exit=0
+=== 3/4 端到端冒烟 ===    [PASS] 离线契约 + 在线链路        结论：端到端全绿
+=== 4/4 评测基线 ===      [PASS] 离线评测可运行且不变量成立  top1=21/24 top3=24/24 mrr=0.9375 对抗不变量=True
 
-CI 亦在干净 Ubuntu 环境执行同一套离线判据（`.github/workflows/ci.yml`，
-不装 Ollama、不下载模型）。
+总计 4/4 项通过
+结论：干净环境验证全绿
+```
+
+**连续三次 `--fast` 复跑，结果逐位相同**（`passed=60 failed=0 errors=0` × 3）——
+判据本身必须是稳定的，否则它没有资格当判据。
+
+#### 判据设计上的硬约束（三层根因，都是踩出来的）
+
+**① 不从人眼输出里提取机器判据。**
+第一版用 `"passed" in stdout` 判断，失败时打印「输出为空（疑似进程被终止）」，
+而真实输出里明明有 `ERROR: file or directory not found: tests` ——
+**报告与事实不符**，把排障引向错误方向。
+
+**② 判据改用进程内插件计数，不用退出码也不用输出文本。**
+修好措辞后又出现新的偶发形态：stdout 尾部是
+`.......(60 个点)...... [100%]`，也就是**测试全部跑完、进程在打印汇总行之前退出**
+（rc=1、stderr 为空）。任何基于 stdout 汇总行的判断都会误报失败。
+
+**③ 真凶：pytest 收尾时的批量删除被环境守卫拦截。**
+把异常类型打进报告后才看见：
+```
+[safe-delete][SAFE_DELETE_BULK_CONFIRM_REQUIRED] {"count":337,"threshold":50,...,
+ "targets":["...\\Temp\\pytest-of-Administrator\\garbage-<uuid>"]}
+→ SystemExit: 1
+```
+pytest 会话收尾要递归删除 337 个历史临时文件，被环境的删除守卫拒绝，
+于是**测试全过、汇总行永远打不出来**。这也解释了"偶发"：累积超阈值后才必然触发。
+
+**④ 最终修法：不让 pytest 使用它的临时目录机制。**
+`tests/conftest.py` 用同名夹具覆盖内建 `tmp_path`，改为 `tempfile.mkdtemp()`
+且**不做任何清理** → 测试进程不再发起递归删除，问题从根上消失。
+（中途试过 `--basetemp` 指向仓库内目录，只是把被拦的位置从"收尾"挪到了"setup"。）
+
+最终实现：`verify.py` 在自身进程内 `pytest.main(..., plugins=[collector])`，
+按 `report.when == "call"` 统计计数，**以计数作为唯一判据**；
+并把「运行没跑起来」与「测试没通过」严格区分：只对前者重试，绝不因后者重试
+（后者重试等于掩盖缺陷）。完整复盘见 `docs/decisions/ADR-008`。
+
+### 7.2 GitHub Actions（真正的"干净环境"）
+
+在完全独立的干净 Ubuntu runner 上（不装 Ollama、不下载任何模型、只用锁文件）：
+
+```
+workflow: verify   触发: push   结论: success   耗时: 21s
+```
+
+CI 依次执行：`uv python install 3.12` → `uv sync --extra dev --frozen`
+→ `pytest -q tests` → `python -m nebula.smoke`（自动跳过在线部分）
+→ `nebula eval --offline` → `python scripts/verify.py --skip-eval`。
+
+**这一条是"干净环境一键复现"最硬的证据**：它与开发机无关、与本地缓存无关、
+与已下载的模型无关，全靠 `uv.lock` + 离线兜底实现（`HashingEmbedder` + `MemoryVectorStore`）。
+
+查看：`gh run list -R CJX0712/nebula-ai-stack`

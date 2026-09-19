@@ -1,10 +1,12 @@
 # Nebula AI Stack · 星穹 AI 栈
 
+[![verify](https://github.com/CJX0712/nebula-ai-stack/actions/workflows/ci.yml/badge.svg)](https://github.com/CJX0712/nebula-ai-stack/actions/workflows/ci.yml)
+
 > 一套**模块化、可独立验证、端到端可运行**的 AI 系统开发环境。
 > 不自研模型，把业界领先开源成果（Ollama / GGUF LLM / bge-m3 / bge-reranker-base / Qdrant / ONNXRuntime / FastAPI）
 > 按单一职责切成 10 个模块，拼成一条可复现链路。
 >
-> 作者：**晨星** · 许可：MIT
+> 作者：**晨星** · 许可：MIT · 仓库：https://github.com/CJX0712/nebula-ai-stack
 
 ---
 
@@ -122,7 +124,7 @@ console/index.html   单文件控制台（内联 CSS/JS，无外部依赖）
 tests/               60 个测试：单元不变量 + 契约 + 隔离性护栏
 scripts/             bootstrap.ps1 / verify.py / bench.py / rerank_ablation.py / make_hard_set.py
 docs/                ARCHITECTURE.md / DEPLOYMENT.md / USAGE.md / **EVIDENCE.md（实测证据）**
-docs/decisions/      ADR-001…007 + OPEN-DECISIONS.md
+docs/decisions/      ADR-001…008 + OPEN-DECISIONS.md
 data/eval/           中文黄金集 set.json + 困难集 set_hard.json
 .github/workflows/   CI（干净 Ubuntu 环境跑同一套离线判据）
 ```
