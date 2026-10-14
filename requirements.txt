@@ -19,9 +19,9 @@ click==8.5.0
     #   uvicorn
 colorama==0.4.6 ; sys_platform == 'win32'
     # via tqdm
-fastapi==0.141.1
+fastapi==0.143.0
     # via nebula-ai-stack
-filelock==4.0.1
+filelock==4.1.1
     # via huggingface-hub
 flatbuffers==25.12.19
     # via onnxruntime
@@ -35,7 +35,7 @@ h11==0.16.0
     #   uvicorn
 h2==4.4.1
     # via httpx
-hf-xet==1.6.0 ; platform_machine == 'AMD64' or platform_machine == 'aarch64' or platform_machine == 'amd64' or platform_machine == 'arm64' or platform_machine == 'x86_64'
+hf-xet==1.7.0 ; platform_machine == 'AMD64' or platform_machine == 'aarch64' or platform_machine == 'amd64' or platform_machine == 'arm64' or platform_machine == 'x86_64'
     # via huggingface-hub
 hpack==4.2.0
     # via h2
@@ -54,12 +54,12 @@ idna==3.20
     # via
     #   anyio
     #   httpx
-numpy==2.5.3
+numpy==2.5.4
     # via
     #   nebula-ai-stack
     #   onnxruntime
     #   qdrant-client
-onnxruntime==1.30.0
+onnxruntime==1.31.0
     # via nebula-ai-stack
 packaging==26.3
     # via
@@ -71,12 +71,12 @@ protobuf==7.36.2
     # via
     #   onnxruntime
     #   qdrant-client
-pydantic==2.13.5
+pydantic==2.14.1
     # via
     #   fastapi
     #   nebula-ai-stack
     #   qdrant-client
-pydantic-core==2.46.5
+pydantic-core==2.50.1
     # via pydantic
 pywin32==312 ; sys_platform == 'win32'
     # via portalocker
@@ -86,9 +86,9 @@ pyyaml==6.0.3
     #   nebula-ai-stack
 qdrant-client==1.19.1
     # via nebula-ai-stack
-starlette==1.6.0
+starlette==1.7.0
     # via fastapi
-tokenizers==0.23.2
+tokenizers==0.23.3
     # via nebula-ai-stack
 tqdm==4.70.1
     # via huggingface-hub
@@ -108,5 +108,5 @@ typing-inspection==0.4.4
     #   pydantic
 urllib3==2.8.0
     # via qdrant-client
-uvicorn==0.53.0
+uvicorn==0.54.0
     # via nebula-ai-stack
